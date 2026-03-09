@@ -270,8 +270,10 @@ pipeline {
         }
 
     }
+    
+    }
 
-}
+
 Step 7 — Run and Verify
 Trigger the Build
 
