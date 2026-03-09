@@ -1,75 +1,124 @@
-# Build-Deploy-Maven-Package-to-GitHub-Packages
-Build & Deploy Maven Package to GitHub Packages
-Compile. Package. Authenticate securely. Deploy to GitHub Packages — fully automated via Jenkins Pipeline.
+Build & Deploy Maven Package to GitHub Packages using Jenkins
 
-📋 Table of Contents
+Compile. Package. Authenticate securely. Deploy to GitHub Packages — fully automated using a Jenkins Pipeline.
+
+Table of Contents
+
 Lab Overview
+
 Prerequisites
+
 Step 1 — Create GitHub PAT Credential in Jenkins
+
 Step 2 — Add Maven settings.xml via Config File Management
+
 Step 3 — Set Up the Java Application
+
 Step 4 — Configure pom.xml for GitHub Packages
+
 Step 5 — Create the Jenkins Pipeline Job
+
 Step 6 — Write the Jenkinsfile
+
 Step 7 — Run and Verify
+
 Lab Summary
-🎯 Lab Overview
-In this lab, you will build a complete Jenkins Pipeline that:
+
+Lab Overview
+
+In this lab you will create a complete CI/CD pipeline using Jenkins that:
 
 Pulls a Java Maven project from GitHub
-Builds and packages it into a JAR
-Authenticates with GitHub using secure Jenkins credentials — no hardcoded secrets
-Uses a managed settings.xml via Config File Provider for clean credential injection
+
+Builds and packages it into a JAR file
+
+Authenticates securely using Jenkins credentials
+
+Uses Config File Provider to manage settings.xml
+
 Deploys the artifact to GitHub Packages (Maven Registry)
-✅ Prerequisites
+
+This demonstrates a real-world DevOps CI/CD workflow.
+
+Prerequisites
 Jenkins Setup
-Requirement	How to Configure
-Jenkins running	Accessible via browser
-JDK configured	Manage Jenkins → Global Tool Configuration → JDK
-Maven configured	Manage Jenkins → Global Tool Configuration → Maven
-Jenkins Plugins Required
+Requirement	Configuration
+Jenkins Running	Accessible via browser
+JDK Installed	Manage Jenkins → Global Tool Configuration
+Maven Installed	Manage Jenkins → Global Tool Configuration
+Required Jenkins Plugins
+
+Install the following plugins:
+
 Plugin	Purpose
-Pipeline	Run Jenkinsfile-based pipelines
-Git	Pull source code from GitHub
-Config File Provider	Manage settings.xml securely
-GitHub Integration	GitHub webhook and SCM integration
-Maven Integration	Invoke Maven goals in Jenkins jobs
-Install any missing plugins via Manage Jenkins → Manage Plugins → Available.
+Pipeline	Run Jenkinsfile pipelines
+Git	Pull code from GitHub
+Config File Provider	Manage settings.xml
+GitHub Integration	GitHub SCM integration
+Maven Integration	Execute Maven builds
 
+Install via:
+
+Manage Jenkins → Manage Plugins → Available
 GitHub Requirements
-A GitHub repository containing your Maven project
-A Personal Access Token (PAT) with the following scopes:
+
+You need:
+
+A GitHub repository
+
+A Personal Access Token (PAT) with permissions:
+
 Scope	Purpose
-write:packages	Push artifacts to GitHub Packages
-read:packages	Read from GitHub Packages
-repo	Access repository contents
-To create a PAT: GitHub → Settings → Developer Settings → Personal Access Tokens → Generate new token
+write:packages	Upload artifacts
+read:packages	Download artifacts
+repo	Access repository
 
+Create the token:
+
+GitHub → Settings → Developer Settings → Personal Access Tokens
 Step 1 — Create GitHub PAT Credential in Jenkins
-Store your GitHub credentials securely in Jenkins so they can be referenced in pipelines without ever being hardcoded.
 
-Go to Manage Jenkins → Credentials → System → Global Credentials → Add Credentials
-Fill in:
+Store credentials securely in Jenkins.
+
+Navigate to:
+
+Manage Jenkins → Credentials → System → Global Credentials
+
+Click Add Credentials and fill:
+
 Field	Value
 Kind	Username with password
 Username	Your GitHub username
-Password	Your GitHub PAT
+Password	GitHub PAT
 ID	github-packages-cred
 Description	GitHub Packages Deploy Credential
-Click Save
-🔐 Jenkins encrypts credentials at rest. They are never exposed in logs — only referenced by ID inside pipelines.
+
+Click Save.
+
+Jenkins encrypts credentials and they are referenced only by ID.
 
 Step 2 — Add Maven settings.xml via Config File Management
-Instead of storing a settings.xml in your repository (which risks exposing secrets), use Jenkins' Config File Provider to manage it centrally and inject it at build time.
 
-Go to Manage Jenkins → Managed Files
+Instead of storing settings.xml in your repository, Jenkins can manage it securely.
+
+Navigate:
+
+Manage Jenkins → Managed Files
+
 Click Add a new Config
-Select Global Maven Settings File
-Configure:
+
+Select:
+
+Global Maven Settings File
+
+Configuration:
+
 Field	Value
 Name	maven-github-settings
 ID	maven-github-settings
-Paste the following content:
+
+Paste the following configuration:
+
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
   <servers>
     <server>
@@ -79,31 +128,38 @@ Paste the following content:
     </server>
   </servers>
 </settings>
-Click Save
-The ${env.GH_USER} and ${env.GH_TOKEN} placeholders will be populated at runtime from environment variables set inside the Jenkinsfile — keeping credentials out of both the settings.xml and the repository.
+
+Save the configuration.
+
+At runtime Jenkins injects credentials using environment variables.
 
 Step 3 — Set Up the Java Application
-Your repository should have the following structure:
 
-your-repo/
-├── src/
-│   └── main/
-│       └── java/
-│           └── com/example/
+Your repository should look like this:
+
+your-repo
+│
+├── src
+│   └── main
+│       └── java
+│           └── com/example
 │               └── App.java
+│
 ├── pom.xml
 └── Jenkinsfile
-src/main/java/com/example/App.java
-
+App.java
 package com.example;
 
 public class App {
+
     public static void main(String[] args) {
         System.out.println("Hello Jenkins CI/CD!");
     }
+
 }
 Step 4 — Configure pom.xml for GitHub Packages
-The distributionManagement section tells Maven where to deploy the artifact. The <id>github</id> must match the server <id> in your settings.xml.
+
+The distributionManagement section tells Maven where to deploy the artifact.
 
 <project xmlns="http://maven.apache.org/POM/4.0.0">
 
@@ -125,31 +181,47 @@ The distributionManagement section tells Maven where to deploy the artifact. The
     </distributionManagement>
 
 </project>
-⚠️ Replace YOUR_USERNAME and YOUR_REPO with your actual GitHub username and repository name before committing.
+
+Replace:
+
+YOUR_USERNAME
+YOUR_REPO
+
+with your GitHub username and repository name.
 
 Step 5 — Create the Jenkins Pipeline Job
-Go to Jenkins Dashboard → New Item
-Enter a name — e.g., maven-deploy-pipeline
-Select Pipeline → Click OK
-In the configuration page:
-Under Pipeline, select Pipeline script from SCM
-Set SCM to Git
-Enter your repository URL
-Add credentials if the repo is private
-Set the branch (e.g., */main)
-Set Script Path to Jenkinsfile
-Click Save
-Step 6 — Write the Jenkinsfile
-Place this Jenkinsfile in the root of your repository:
+
+Go to:
+
+Jenkins Dashboard → New Item
+
+Create a Pipeline Job.
+
+Configuration:
+
+Setting	Value
+Name	maven-deploy-pipeline
+Pipeline Type	Pipeline script from SCM
+SCM	Git
+Repository URL	Your GitHub repo
+Branch	*/main
+Script Path	Jenkinsfile
+
+Click Save.
+
+Step 6 — Jenkinsfile
+
+Create a Jenkinsfile in your repository root.
 
 pipeline {
+
     agent any
 
     environment {
         GITHUB_CREDS = credentials('github-packages-cred')
-        JAVA_HOME    = tool name: 'jdk11'
-        MAVEN_HOME   = tool name: 'maven3'
-        PATH         = "${JAVA_HOME}/bin:${PATH}"
+        JAVA_HOME = tool name: 'jdk11'
+        MAVEN_HOME = tool name: 'maven3'
+        PATH = "${JAVA_HOME}/bin:${PATH}"
     }
 
     stages {
@@ -161,76 +233,96 @@ pipeline {
         }
 
         stage('Build & Deploy') {
+
             steps {
-                configFileProvider([configFile(fileId: 'maven-github-settings', variable: 'MAVEN_SETTINGS')]) {
-                    sh """
+
+                configFileProvider([
+                    configFile(
+                        fileId: 'maven-github-settings',
+                        variable: 'MAVEN_SETTINGS'
+                    )
+                ]) {
+
+                    sh '''
                         export GH_USER=${GITHUB_CREDS_USR}
                         export GH_TOKEN=${GITHUB_CREDS_PSW}
 
                         ${MAVEN_HOME}/bin/mvn -s $MAVEN_SETTINGS -B clean package
                         ${MAVEN_HOME}/bin/mvn -s $MAVEN_SETTINGS -B deploy
-                    """
+                    '''
+
                 }
+
             }
+
         }
+
     }
 
     post {
+
         success {
-            echo "✅ Build and deployment to GitHub Packages completed successfully."
+            echo "Build and deployment to GitHub Packages completed successfully."
         }
+
         failure {
-            echo "❌ Pipeline failed. Check the console output for details."
+            echo "Pipeline failed. Check console logs."
         }
+
     }
+
 }
-How the credential flow works:
-
-Jenkins Credentials Store
-        │
-        │  credentials('github-packages-cred')
-        ▼
-  GITHUB_CREDS_USR  ──▶  GH_USER  ──▶  settings.xml ${env.GH_USER}
-  GITHUB_CREDS_PSW  ──▶  GH_TOKEN ──▶  settings.xml ${env.GH_TOKEN}
-                                                │
-                                                ▼
-                                    Maven authenticates with GitHub Packages
-💡 Jenkins automatically exposes _USR and _PSW suffixed variables when you use credentials() with a username/password credential type.
-
 Step 7 — Run and Verify
 Trigger the Build
-Go to your pipeline job
-Click Build Now
+
+Go to your Jenkins pipeline.
+
+Click:
+
+Build Now
+
 Jenkins will:
 
-Clone your GitHub repository
-Compile and package the JAR using Maven
-Inject credentials via configFileProvider
+Clone the repository
+
+Build the Maven project
+
+Inject credentials
+
 Authenticate with GitHub Packages
-Deploy the artifact to the registry
-Check the Console Output
-Click on Build #1 → Console Output and look for:
 
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  18.432 s
-Verify the Package on GitHub
-Navigate to your GitHub repository:
+Deploy the artifact
 
-GitHub → Your Repository → Packages (right sidebar)
+Verify Build Logs
+
+Open:
+
+Build → Console Output
+
+Look for:
+
+BUILD SUCCESS
+Verify Package on GitHub
+
+Navigate to:
+
+GitHub → Repository → Packages
+
 You should see:
 
 Field	Value
-Package Name	jenkins-demo
+Package	jenkins-demo
 Version	1.0.0
-Files	jenkins-demo-1.0.0.jar, jenkins-demo-1.0.0.pom
+Files	jenkins-demo-1.0.0.jar
 Registry	GitHub Maven Registry
-📌 Lab Summary
-Step	What Was Done
-🔐 Credentials	Stored GitHub PAT securely in Jenkins credentials store
-📄 settings.xml	Managed via Config File Provider — no secrets in repo
-☕ App Code	Created a simple Java App.java with Maven project structure
-📦 pom.xml	Configured distributionManagement pointing to GitHub Packages
-⚙️ Pipeline Job	Created Jenkins Pipeline job pointing to repo's Jenkinsfile
-🚀 Jenkinsfile	Wrote pipeline with checkout, build, deploy stages
-✅ Verify	Confirmed artifact visible in GitHub → Packages
+Lab Summary
+Step	Description
+Credentials	Stored GitHub PAT securely in Jenkins
+settings.xml	Managed via Config File Provider
+App Code	Created simple Java Maven project
+pom.xml	Configured GitHub Packages repository
+Pipeline Job	Created Jenkins pipeline
+Jenkinsfile	Implemented CI/CD pipeline
+Verification	Confirmed artifact in GitHub Packages
+
+If you want, I can also give you a GitHub README that looks more professional (with diagrams, badges, and DevOps architecture) — which makes your DevOps portfolio much stronger for interviews.
